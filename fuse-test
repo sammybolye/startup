@@ -1,0 +1,102 @@
+
+#Create gcs bucket
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ gsutil mb gs://playground-s-11-cb9f39ab
+Creating gs://playground-s-11-cb9f39ab/...
+
+#Create a mount point for fuse
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ sudo mkdir /fuse
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ sudo chown -R $USER /fuse
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ ls -l |grep fuse
+total 12896
+drwxr-xr-x   2 cloud_user_p_d1f16f92 root      4096 May 26 06:54 fuse
+
+
+#Mount gcsfuse with default options
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ gcsfuse playground-s-11-cb9f39ab /fuse
+2021/05/26 06:55:02.360172 Using mount point: /fuse
+2021/05/26 06:55:02.379420 Opening GCS connection...
+2021/05/26 06:55:03.018247 Mounting file system "playground-s-11-cb9f39ab"...
+2021/05/26 06:55:03.068857 File system has been successfully mounted.
+
+#1GB writes 
+
+# local disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ dd if=/dev/zero of=/tmp/test.img bs=1G count=1 oflag=dsync
+1+0 records in
+1+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 2.16936 s, 495 MB/s
+
+# Fuse disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ dd if=/dev/zero of=/fuse/test.img bs=1G count=1 oflag=dsync
+1+0 records in
+1+0 records out
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 11.3864 s, 94.3 MB/s
+
+
+#1M writes
+
+#local disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ time sh -c "dd if=/dev/zero of=/tmp/test.tmp bs=1M count=2000 && sync"
+2000+0 records in
+2000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 2.75812 s, 760 MB/s
+
+real    0m4.044s
+user    0m0.003s
+sys     0m3.160s
+
+# Fuse disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ time sh -c "dd if=/dev/zero of=/fuse/test.tmp bs=1M count=2000 && sync"
+2000+0 records in
+2000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 20.0989 s, 104 MB/s
+
+real    0m30.545s
+user    0m0.008s
+sys     0m1.561s
+
+
+
+#1K writes
+
+#Local disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ time sh -c "dd if=/dev/zero of=/tmp/test.tmp bs=1k count=2000000 && sync"
+2000000+0 records in
+2000000+0 records out
+2048000000 bytes (2.0 GB, 1.9 GiB) copied, 8.82683 s, 232 MB/s
+
+real    0m8.867s
+user    0m1.365s
+sys     0m7.122s
+
+#Fuse disk
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ time sh -c "dd if=/dev/zero of=/fuse/test.tmp bs=1k count=2000000 && sync"
+2000000+0 records in
+2000000+0 records out
+2048000000 bytes (2.0 GB, 1.9 GiB) copied, 26.0933 s, 78.5 MB/s
+
+real    0m26.653s
+user    0m1.408s
+sys     0m4.837s
+
+
+
+# Remount gcsfuse with --temp-dir for local storage
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ gcsfuse --temp-dir /tmp  playground-s-11-cb9f39ab /fuse
+2021/05/26 07:11:33.545947 Using mount point: /fuse
+2021/05/26 07:11:33.555803 Opening GCS connection...
+2021/05/26 07:11:33.924463 Mounting file system "playground-s-11-cb9f39ab"...
+2021/05/26 07:11:33.927272 File system has been successfully mounted.
+
+
+#1M Fuse write
+cloud_user_p_d1f16f92@cloudshell:~ (playground-s-11-cb9f39ab)$ time sh -c "dd if=/dev/zero of=/fuse/test.tmp bs=1M count=2000 && sync"
+2000+0 records in
+2000+0 records out
+2097152000 bytes (2.1 GB, 2.0 GiB) copied, 20.7958 s, 101 MB/s
+
+real    0m32.221s
+user    0m0.009s
+sys     0m1.576s
+
+
