@@ -1,6 +1,7 @@
 name: must run on a custom runner
 
 on: push
+    branches: [ "master" ]
 
 jobs:
   init:
