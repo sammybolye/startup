@@ -21,4 +21,4 @@ jobs:
       run: |
         # Use gcloud commands to interact with GCP resources
         gcloud auth use-access-token
-        gcloud containers clusters list
+        gcloud compute instances list
